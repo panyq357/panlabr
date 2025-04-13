@@ -1,13 +1,33 @@
 library(ggplot2)
 
 #' @export
-geom_triad <- function(bar_width = 0.6,
-                       errorbar_width = 0.4, sdl_mult = 1,
-                       jitter_width = 0.2, jitter_alpha = 0.5) {
+geom_triad <- function(bar_args = NULL, errorbar_args = NULL, jitter_args = NULL) {
+
+  args <- list(
+    bar = list(geom="col", fun="mean", color="black", na.rm=T, width=0.6),
+    errorbar = list(geom="errorbar", fun.data="mean_sdl", fun.args=list("mult"=1), na.rm=T, width = 0.4),
+    jitter = list(height = 0, width = 0.2, size = 1, alpha = 0.5, stroke = 0)
+  )
+
+  if (length(bar_args) > 0) {
+    for (name in names(bar_args)) {
+      args$bar[[name]] <- bar_args[[name]]
+    }
+  }
+  if (length(errorbar_args) > 0) {
+    for (name in names(errorbar_args)) {
+      args$errorbar[[name]] <- errorbar_args[[name]]
+    }
+  }
+  if (length(jitter_args) > 0) {
+    for (name in names(jitter_args)) {
+      args$jitter[[name]] <- jitter_args[[name]]
+    }
+  }
   list(
-    stat_summary(geom="col", fun="mean", color="black", na.rm=T, width=bar_width),
-    stat_summary(geom="errorbar", fun.data="mean_sdl", fun.args=list("mult" = sdl_mult), na.rm=T, width=errorbar_width),
-    geom_jitter(height=0, width=jitter_width, alpha=jitter_alpha)
+    do.call(stat_summary, args$bar),
+    do.call(stat_summary, args$errorbar),
+    do.call(geom_jitter, args$jitter)
   )
 }
 
@@ -18,10 +38,6 @@ theme_simple <- function(y_top_mult = 0.2, y_bottom_mult = 0) {
     theme_classic(),
     theme(legend.position = "none")
   )
-}
-
-label_y_fun_max_0.1 <- function(data) {
-  split(data$y, data$group) |> sapply(function(x) max(x) + max(data$y) * 0.1)
 }
 
 #' @export
@@ -65,9 +81,10 @@ GeomTestWithRef <- ggproto("GeomTestWithRef", GeomText,
 
 #' @export
 geom_test_with_ref <- function(mapping = NULL, data = NULL,
-                       stat = "identity", position = "identity",
-                       na.rm = FALSE, show.legend = NA, inherit.aes = TRUE,
-                       ref_group = 1, label_y_fun = label_y_fun_max_0.1, test = "t.test", ...) {
+                               stat = "identity", position = "identity",
+                               na.rm = FALSE, show.legend = NA, inherit.aes = TRUE,
+                               label_y_fun = function(data) { split(data$y, data$group) |> sapply(function(x) max(x, na.rm=T) + max(data$y, na.rm=T) * 0.1) },
+                               ref_group = 1, test = "t.test", ...) {
   layer(
     stat = stat,
     data = data,
