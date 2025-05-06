@@ -1,12 +1,46 @@
 library(ggplot2)
 
+#' Plot bar, errorbar and jitter
+#'
+#' Plot bar, errorbar and jitter dots in one function call with proper default
+#' settings.
+#'
+#' @param bar_args Arguments for barplot.
+#' @param errorbar_args Arguments for errorbar.
+#' @param jitter_args Arguments for jitter.
+#'
+#' @examples
+#'
+#' ggplot(iris, aes(Species, Petal.Width, fill=Species)) + geom_triad()
+#'
 #' @export
-geom_triad <- function(bar_args = NULL, errorbar_args = NULL, jitter_args = NULL) {
+#'
+geom_triad <- function(bar_args = NULL,
+                       errorbar_args = NULL,
+                       jitter_args = NULL) {
 
   args <- list(
-    bar = list(geom="col", fun="mean", color="black", na.rm=T, width=0.6),
-    errorbar = list(geom="errorbar", fun.data="mean_sdl", fun.args=list("mult"=1), na.rm=T, width = 0.4),
-    jitter = list(height = 0, width = 0.2, size = 1, alpha = 0.5, stroke = 0)
+    bar = list(
+      geom="col",
+      fun="mean",
+      color="black",
+      na.rm=T,
+      width=0.6
+    ),
+    errorbar = list(
+      geom="errorbar",
+      fun.data="mean_sdl",
+      fun.args=list("mult"=1),
+      na.rm=T,
+      width = 0.4
+    ),
+    jitter = list(
+      height = 0,
+      width = 0.2,
+      size = 1,
+      alpha = 0.5,
+      stroke = 0
+    )
   )
 
   if (length(bar_args) > 0) {
@@ -80,10 +114,39 @@ GeomTestWithRef <- ggproto("GeomTestWithRef", GeomText,
 )
 
 #' @export
+label_y_fun_max_0.1 <- function(data) {
+  split(data$y, data$group) |>
+    sapply(function(x) max(x, na.rm=T) + max(data$y, na.rm=T) * 0.1)
+}
+
+#' @export
+label_y_fun_mean_0.1 <- function(data) {
+  split(data$y, data$group) |>
+    sapply(function(x) mean(x, na.rm=T) + max(data$y, na.rm=T) * 0.1)
+}
+
+
+#' Add signif stars (test with ref)
+#'
+#' Test all groups with ref group and plot signif stars.
+#'
+#' @param label_y_fun A function for signif star y pos.
+#' @param ref_group Index of reference group level.
+#' @param test Name of function for run test.
+#' 
+#' @examples
+#'
+#' ggplot(iris, aes(Species, Petal.Width, fill=Species)) +
+#'   geom_triad() +
+#'   theme_simple() +
+#'   geom_test_with_ref()
+#'
+#' @export
+#'
 geom_test_with_ref <- function(mapping = NULL, data = NULL,
                                stat = "identity", position = "identity",
                                na.rm = FALSE, show.legend = NA, inherit.aes = TRUE,
-                               label_y_fun = function(data) { split(data$y, data$group) |> sapply(function(x) max(x, na.rm=T) + max(data$y, na.rm=T) * 0.1) },
+                               label_y_fun = label_y_fun_max_0.1,
                                ref_group = 1, test = "t.test", ...) {
   layer(
     stat = stat,
@@ -126,7 +189,21 @@ GeomANOVALSDGroups <- ggproto("GeomANOVALSDGroups", GeomText,
   }
 )
 
+#' Add signif stars (ANOVA LSD)
+#'
+#' Perform ANOVA and LSD tests, then plot LSD letters.
+#'
+#' @param label_y_fun A function for signif star y pos.
+#' 
+#' @examples
+#'
+#' ggplot(iris, aes(Species, Petal.Width, fill=Species)) +
+#'   geom_triad() +
+#'   theme_simple() +
+#'   geom_anova_lsd_groups()
+#'
 #' @export
+#'
 geom_anova_lsd_groups <- function(mapping = NULL, data = NULL,
                               stat = "identity", position = "identity",
                               na.rm = FALSE, show.legend = NA, inherit.aes = TRUE,

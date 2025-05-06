@@ -3,5 +3,6 @@
 export(geom_anova_lsd_groups)
 export(geom_test_with_ref)
 export(geom_triad)
+export(label_y_fun_max_0.1)
 export(theme_simple)
 export(theme_x_label_45)
