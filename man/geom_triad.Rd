@@ -2,7 +2,7 @@
 % Please edit documentation in R/barplot.R
 \name{geom_triad}
 \alias{geom_triad}
-\title{Plot bar, errorbar and jitter.}
+\title{Plot bar, errorbar and jitter}
 \usage{
 geom_triad(bar_args = NULL, errorbar_args = NULL, jitter_args = NULL)
 }
@@ -16,9 +16,4 @@ geom_triad(bar_args = NULL, errorbar_args = NULL, jitter_args = NULL)
 \description{
 Plot bar, errorbar and jitter dots in one function call with proper default
 settings.
-}
-\examples{
-
-ggplot(iris, aes(Species, Petal.Width, fill=Species)) + geom_triad()
-
 }

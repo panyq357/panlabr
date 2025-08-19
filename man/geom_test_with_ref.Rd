@@ -2,7 +2,7 @@
 % Please edit documentation in R/barplot.R
 \name{geom_test_with_ref}
 \alias{geom_test_with_ref}
-\title{Add signif stars (test with ref).}
+\title{Add signif stars (test with ref)}
 \usage{
 geom_test_with_ref(
   mapping = NULL,
@@ -27,12 +27,4 @@ geom_test_with_ref(
 }
 \description{
 Test all groups with ref group and plot signif stars.
-}
-\examples{
-
-ggplot(iris, aes(Species, Petal.Width, fill=Species)) +
-  geom_triad() +
-  theme_simple() +
-  geom_test_with_ref()
-
 }

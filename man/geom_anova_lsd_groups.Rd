@@ -2,7 +2,7 @@
 % Please edit documentation in R/barplot.R
 \name{geom_anova_lsd_groups}
 \alias{geom_anova_lsd_groups}
-\title{Add signif stars (ANOVA LSD).}
+\title{Add signif stars (ANOVA LSD)}
 \usage{
 geom_anova_lsd_groups(
   mapping = NULL,
@@ -21,12 +21,4 @@ geom_anova_lsd_groups(
 }
 \description{
 Perform ANOVA and LSD tests, then plot LSD letters.
-}
-\examples{
-
-ggplot(iris, aes(Species, Petal.Width, fill=Species)) +
-  geom_triad() +
-  theme_simple() +
-  geom_anova_lsd_groups()
-
 }

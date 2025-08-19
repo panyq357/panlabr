@@ -10,5 +10,15 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports: 
     agricolae,
+    BiocGenerics,
+    Biostrings,
     dplyr,
-    ggplot2
+    GenomicAlignments,
+    GenomicRanges,
+    ggplot2,
+    IRanges,
+    readr,
+    rtracklayer
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
