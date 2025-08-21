@@ -24,7 +24,6 @@ setMethod("read_vcf",
       comment = "##",
       col_types = readr::cols(
         POS = readr::col_integer(),
-        QUAL = readr::col_double(),
         .default = readr::col_character()
       )
     )
@@ -76,8 +75,6 @@ write_vcf_bgzip <- function(vcf, file) {
   system2("bgzip", stdin = tmp_vcf, stdout = file)
 
   unlink(tmp_vcf)
-
-  return(NULL)
 }
 
 
@@ -113,4 +110,32 @@ vcf_to_gt_mat <- function(vcf_df, simplify = FALSE) {
   }
 
   return(gt_mat)
+}
+
+#' Calculate MAF and Missing rate of variants in vcf df
+#'
+#' @param vcf a vcf tibble.
+#'
+#' @export
+vcf_variant_stats <- function(vcf) {
+  missing_list <- list()
+  maf_list <- list()
+  for (i in seq_len(nrow(vcf))) {
+    t <- vcf[i, 10:length(vcf)] |>
+      unlist() |>
+      strsplit("[/|]") |>
+      unlist() |>
+      table() |>
+      sort(decreasing = TRUE)
+    missing_list[[length(missing_list) + 1]] <- t[names(t) == "."] / sum(t)
+    maf_list[[length(maf_list) + 1]] <- t[names(t) != "."][2] / sum(t[names(t) != "."])
+  }
+
+  out <- cbind(
+    vcf[1:2],
+    Missing = unlist(missing_list),
+    MAF = unlist(maf_list)
+  )
+
+  return(out)
 }
