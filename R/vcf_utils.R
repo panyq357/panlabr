@@ -1,14 +1,16 @@
 #' Read VCF file as tibble.
 #' @param vcf_path Path to VCF file.
 #' @export
-setGeneric("read_vcf",
+setGeneric(
+  "read_vcf",
   function(vcf_path, chromosome, start, end) {
     standardGeneric("read_vcf")
   }
 )
 
 
-setMethod("read_vcf",
+setMethod(
+  "read_vcf",
   signature(
     vcf_path = "character",
     chromosome = "missing",
@@ -35,7 +37,8 @@ setMethod("read_vcf",
 )
 
 
-setMethod("read_vcf",
+setMethod(
+  "read_vcf",
   signature(
     vcf_path = "character",
     chromosome = "character",
@@ -43,7 +46,6 @@ setMethod("read_vcf",
     end = "numeric"
   ),
   function(vcf_path, chromosome, start, end) {
-
     if (!file.exists(paste0(vcf_path, ".tbi"))) {
       system2("tabix", args = vcf_path)
     }
@@ -66,7 +68,6 @@ setMethod("read_vcf",
 #' @importFrom readr write_lines write_tsv
 #' @export
 write_vcf_bgzip <- function(vcf, file) {
-
   tmp_vcf <- tempfile(fileext = ".vcf")
 
   readr::write_lines(attr(vcf, "header"), tmp_vcf)
@@ -77,13 +78,16 @@ write_vcf_bgzip <- function(vcf, file) {
   unlink(tmp_vcf)
 }
 
+# To remove fields after GT field in vcf sample columns (sep by `:`).
+get_gt <- function(x) {
+  sub("([^:]+).*", "\\1", x)
+}
 
 #' Get genotype character matrix from vcf tibble.
 #' @param vcf_df vcf tibble or data.frame.
 #' @param simplify e.g. "T/T" > "T", "AG/AG" > "AG", won't simplify heterozygote.
 #' @export
 vcf_to_gt_mat <- function(vcf_df, simplify = FALSE) {
-
   # Empty matrix.
   gt_mat <- matrix(nrow = nrow(vcf_df), ncol = ncol(vcf_df) - 9)
   colnames(gt_mat) <- names(vcf_df)[10:length(vcf_df)]
@@ -96,38 +100,47 @@ vcf_to_gt_mat <- function(vcf_df, simplify = FALSE) {
 
     gt <- vcf_df[i, 10:length(vcf_df)] |>
       unlist() |>
-      sub("([^:]+).*", "\\1", x = _)  # To remove fields after genotype (sep by `:`).
+      get_gt()
 
     for (num in names(ref_alt)) {
       gt <- gsub(num, ref_alt[num], gt)
     }
 
     if (simplify == TRUE) {
-      gt <- gsub("([^/|]+)[/|]\\1$", "\\1", gt)  # e.g. "T/T" > "T", "A/T" > "A/T"
+      gt <- gsub("([^/|]+)[/|]\\1$", "\\1", gt) # e.g. "T/T" > "T", "A/T" > "A/T"
     }
 
-    gt_mat[i,] <- gt
+    gt_mat[i, ] <- gt
   }
 
   return(gt_mat)
 }
 
 #' Calculate MAF and Missing rate of variants in vcf df
+#' inside R
 #'
 #' @param vcf a vcf tibble.
 #'
 #' @export
-vcf_variant_stats <- function(vcf) {
+vcf_variant_stats_R <- function(vcf) {
   missing_list <- list()
   maf_list <- list()
-  for (i in seq_len(nrow(vcf))) {
-    t <- vcf[i, 10:length(vcf)] |>
-      unlist() |>
-      strsplit("[/|]") |>
-      unlist() |>
-      table() |>
-      sort(decreasing = TRUE)
-    missing_list[[length(missing_list) + 1]] <- t[names(t) == "."] / sum(t)
+
+  m <- as.matrix(vcf[10:length(vcf)])
+  allele_mat <- cbind(
+    sub("([^/|]+)[/|]([^:])+.*", "\\1", m),
+    sub("([^/|]+)[/|]([^:])+.*", "\\2", m)
+  )
+
+  tab_list <- apply(allele_mat, 1, table, simplify = FALSE)
+
+  for (i in seq_len(length(tab_list))) {
+    t <- tab_list[[i]]
+    if ("." %in% names(t)) {
+      missing_list[[length(missing_list) + 1]] <- t[names(t) == "."] / sum(t)
+    } else {
+      missing_list[[length(missing_list) + 1]] <- 0
+    }
     maf_list[[length(maf_list) + 1]] <- t[names(t) != "."][2] / sum(t[names(t) != "."])
   }
 
@@ -138,4 +151,77 @@ vcf_variant_stats <- function(vcf) {
   )
 
   return(out)
+}
+
+
+bcftools_fill_tags_wrapper <- function(input, output, tags = "MAF,F_MISSING") {
+  system2("bcftools", args = c("+fill-tags", input, "-Oz", "-o", output, "--", "-t", tags))
+}
+
+
+#' Calculate MAF and Missing rate of variants in vcf df
+#' using bcftools +fill-tags
+#'
+#' @param vcf a vcf tibble or vcf file path.
+#'
+#' @export
+setGeneric("bcftools_variant_stats", function(vcf) {
+  standardGeneric("bcftools_variant_stats")
+})
+
+setMethod(
+  "bcftools_variant_stats",
+  signature(vcf = "character"),
+  function(vcf) {
+    # Missing contig in header (e.g. `##contig=<ID=1,length=43269907>`)
+    # will cause bcftools stop, tabix is workaround
+    if (!file.exists(paste0(vcf, ".tbi"))) {
+      system2("tabix", vcf)
+    }
+
+    tmp_vcf_gz <- file.path(tempdir(), "bcftools_variant_stats.vcf.gz")
+    bcftools_fill_tags_wrapper(vcf, tmp_vcf_gz)
+    new_vcf <- read_vcf(tmp_vcf_gz)
+    unlink(tmp_vcf_gz)
+
+    info_mat <- strsplit(new_vcf$INFO, ";") |> do.call(rbind, args = _)
+    out <- cbind(
+      new_vcf[1:2],
+      Missing = info_mat[grepl("F_MISSING", info_mat)] |>
+        sub("[^=]+=(.*)", "\\1", x = _) |>
+        as.numeric(),
+      MAF = info_mat[grepl("MAF", info_mat)] |>
+        sub("[^=]+=(.*)", "\\1", x = _) |>
+        as.numeric()
+    )
+    return(out)
+  }
+)
+
+setMethod(
+  "bcftools_variant_stats",
+  signature(vcf = "tbl_df"),
+  function(vcf) {
+    tmp_vcf_gz <- tempfile(fileext = ".vcf.gz")
+    write_vcf_bgzip(vcf, tmp_vcf_gz)
+    out <- bcftools_variant_stats(tmp_vcf_gz)
+    unlink(tmp_vcf_gz)
+    return(out)
+  }
+)
+
+#' @export
+vcftools_filter_wrapper <- function(input, output, maf = NULL, max_missing = NULL, biallelic = FALSE) {
+  args <- c("--gzvcf", input, "--recode", "--stdout")
+
+  if (!is.null(maf)) {
+    args <- c("--maf", maf, args)
+  }
+  if (!is.null(max_missing)) {
+    args <- c("--max-missing", max_missing, args)
+  }
+  if (biallelic) {
+    args <- c("--min-alleles", "2", "--max-alleles", "2", args)
+  }
+  system2("vcftools", args, stdout=output)
 }

@@ -7,6 +7,8 @@
 #' @importFrom agricolae LSD.test
 #' @importFrom rtracklayer import export
 #' @importFrom glue glue
+#' @importFrom GenomicRanges start end strand `start<-` `end<-`
+#' @importFrom IRanges `%over%` subsetByOverlaps
 #' @importClassesFrom Biostrings DNAStringSet
 #' @importClassesFrom GenomicRanges GRanges
 NULL
