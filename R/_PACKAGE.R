@@ -3,6 +3,7 @@
 #' @name panlabr
 #' @import ggplot2
 #' @import readr
+#' @import stringr
 #' @importFrom stats setNames
 #' @importFrom agricolae LSD.test
 #' @importFrom rtracklayer import export
