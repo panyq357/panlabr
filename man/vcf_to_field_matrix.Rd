@@ -4,12 +4,14 @@
 \alias{vcf_to_field_matrix}
 \title{Get field matrix from vcf tibble.}
 \usage{
-vcf_to_field_matrix(vcf, field)
+vcf_to_field_matrix(vcf, field, mc.cores = NULL)
 }
 \arguments{
 \item{vcf}{a vcf tibble.}
 
 \item{field}{field name, e.g. "AD", "DP"}
+
+\item{mc.cores}{number of cores used in parallel::mclapply}
 }
 \description{
 Get genotype field sample columns of vcf tibble, such as AD, DP...
