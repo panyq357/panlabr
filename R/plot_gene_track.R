@@ -155,3 +155,40 @@ plot_gene_track <- function(gtf, gene_range, padding = 0, show_gene_id = TRUE,
 
   return(track_plot)
 }
+
+
+#' @export
+plot_bw <- function(bw, gene_range, ylim=NULL, name="") {
+
+  df <- subsetByOverlaps(bw, gene_range) |> as.data.frame()
+
+  if (is.null(ylim)) {
+    ylim <- c(0, max(df$score))
+  }
+
+  bw_plot <- ggplot(df) +
+    geom_rect(aes(xmin = start, xmax = end, ymin = 0, ymax = score), fill="grey", color="grey", linewidth=0.1) +
+    coord_cartesian(xlim=c(start(gene_range), end(gene_range)), ylim=ylim) +
+    scale_x_continuous(expand=c(0, 1)) +
+    labs(y=name) +
+    theme_classic()
+
+  return(bw_plot)
+}
+
+
+#' @export
+plot_bed <- function(bed, gene_range, name="") {
+
+  bed_plot <- subsetByOverlaps(bed, gene_range) |>
+    as.data.frame() |>
+    ggplot() +
+    geom_rect(aes(xmin = start, xmax = end, ymin = 0.5, ymax = 1.5), fill="black") +
+    coord_cartesian(xlim=c(start(gene_range), end(gene_range)), ylim=c(0, 2)) +
+    scale_x_continuous(expand=c(0, 1)) +
+    scale_y_continuous(breaks=NULL, labels=NULL) +
+    labs(y=name) +
+    theme_classic()
+
+  return(bed_plot)
+}

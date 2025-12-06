@@ -256,6 +256,7 @@ vcf_variant_stats_R <- function(vcf) {
 }
 
 
+#' @export
 bcftools_fill_tags_wrapper <- function(input, output, tags = "MAF,F_MISSING") {
   system2("bcftools", args = c("+fill-tags", input, "-Oz", "-o", output, "--", "-t", tags))
 }
@@ -313,8 +314,15 @@ setMethod(
 )
 
 #' @export
-vcftools_filter_wrapper <- function(input, output, maf = NULL, max_missing = NULL, biallelic = FALSE) {
-  args <- c("--gzvcf", input, "--recode", "--stdout")
+vcftools_filter_wrapper <- function(input, output, gzip_input = TRUE, gzip_output = TRUE, maf = NULL, max_missing = NULL, biallelic = FALSE) {
+
+  args <- c("--recode", "--stdout")
+
+  if (gzip_input) {
+    args <- c("--gzvcf", input, args)
+  } else {
+    args <- c("--vcf", input, args)
+  }
 
   if (!is.null(maf)) {
     args <- c("--maf", maf, args)
@@ -325,7 +333,15 @@ vcftools_filter_wrapper <- function(input, output, maf = NULL, max_missing = NUL
   if (biallelic) {
     args <- c("--min-alleles", "2", "--max-alleles", "2", args)
   }
-  system2("vcftools", args, stdout = output)
+
+  if (gzip_output) {
+    temp <- tempfile()
+    on.exit({ file.remove(temp) })
+    system2("vcftools", args, stdout = temp)
+    system2("bgzip", c("-c", temp), stdout = output)
+  } else {
+    system2("vcftools", args, stdout = output)
+  }
 }
 
 #' @export
