@@ -131,7 +131,6 @@ plot_gene_track <- function(gtf, gene_range, padding = 0, show_gene_id = TRUE,
     geom_rect(data = subset(plot_data, type == "exon"), mapping = aes(xmin = start, xmax = end, ymin = track_num - 0.5, ymax = track_num + 0.5), fill = "white", color = "black") +
     geom_rect(data = subset(plot_data, type == "CDS"), mapping = aes(xmin = start, xmax = end, ymin = track_num - 0.5, ymax = track_num + 0.5), fill = "black", color = "black") +
     coord_cartesian(xlim = c(start(gene_range), end(gene_range)), ylim = c(min(plot_data$track_num) - 2, max(plot_data$track_num) + 2)) +
-    scale_x_continuous(expand = c(0, 1)) +
     scale_y_continuous(breaks = NULL, labels = NULL) +
     labs(x = NULL, y = NULL) +
     theme_classic()

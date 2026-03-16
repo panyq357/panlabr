@@ -79,7 +79,7 @@ hap_mat_to_hap_long <- function(hap_mat, group_info) {
 
   hap_long[startsWith(names(hap_long), "Group.")][is.na(hap_long[startsWith(names(hap_long), "Group.")])] <- FALSE
 
-  gt_str_vect <- apply(hap_long[substr(names(hap_long), 1, 4) == "Pos."], 1, function(row) paste(row, collapse="|"))
+  gt_str_vect <- apply(hap_long[substr(names(hap_long), 1, 4) == "Pos."], 1, function(row) paste(row, collapse = "|"))
 
   gt_str_freq <- table(gt_str_vect) |> sort(decreasing = TRUE)
 
@@ -90,23 +90,23 @@ hap_mat_to_hap_long <- function(hap_mat, group_info) {
 
 #' @export
 hap_long_to_hap_stat <- function(hap_long) {
-  hap_long_stat <- split(hap_long, hap_long$HapGroup) |> lapply(function(df) {
-    stat_df <- df[startsWith(names(df), "Group.")] |>
-      apply(2, sum) |>
-      as.data.frame() |>
-      t() |>
-      as.data.frame()
-    stat_df <- cbind(HapGroup = df$HapGroup[[1]], df[1, startsWith(names(df), "Pos.")], stat_df, Count = rowSums(stat_df))
-    return(stat_df)
-  }) |>
-    do.call(rbind, args=_)
+  hap_long_stat <- split(hap_long, hap_long$HapGroup) |>
+    lapply(function(df) {
+      stat_df <- df[startsWith(names(df), "Group.")] |>
+        apply(2, sum) |>
+        as.data.frame() |>
+        t() |>
+        as.data.frame()
+      stat_df <- cbind(HapGroup = df$HapGroup[[1]], df[1, startsWith(names(df), "Pos.")], stat_df, Count = rowSums(stat_df))
+      return(stat_df)
+    }) |>
+    do.call(rbind, args = _)
   return(hap_long_stat[order(sub("[^0-9]+([0-9]+).*", "\\1", hap_long_stat$HapGroup) |> as.integer()), ])
 }
 
 
 #' @export
 hap_stat_to_nexus_df <- function(hap_stat) {
-
   if (nrow(hap_stat) >= 20) {
     warning("haplotype number is ", nrow(hap_stat), ", might need filter first.")
   }
@@ -126,9 +126,9 @@ hap_stat_to_nexus_df <- function(hap_stat) {
     pos_mat[, j] <- c("a", "t", "c", "g")[match(pos_mat[, j], table(pos_mat[, j]) |> sort(decreasing = TRUE) |> names())]
   }
 
-  seq <- apply(pos_mat, 1, function(row) paste(row, collapse=""))
+  seq <- apply(pos_mat, 1, function(row) paste(row, collapse = ""))
 
-  nexus_df <- cbind(ID=hap_stat$HapGroup, Seq=seq, hap_stat[startsWith(names(hap_stat), "Group.")])
+  nexus_df <- cbind(ID = hap_stat$HapGroup, Seq = seq, hap_stat[startsWith(names(hap_stat), "Group.")])
   row.names(nexus_df) <- NULL
 
   return(nexus_df)
@@ -177,163 +177,4 @@ END;
 "
   )
   write(nexus_string, out)
-}
-
-#' @export
-plot_hap_table <- function(hap_stat, range) {
-
-  hap_stat_to_label_df <- function(hap_stat, range) {
-
-    # TODO: Split cells by nchar(cell)
-
-    col_rel_width <- apply(hap_stat, 2, function(col) max(nchar(col)))
-
-    inc <- (max(range) - min(range)) / sum(col_rel_width)
-
-    # e.g. if 3 cell in a row, split row into 6 segment,
-    # let cell center letter in the center of two segment.
-
-    label_list <- list()
-    x_list <- list()
-    y_list <- list()
-
-    for (i in seq_len(nrow(hap_stat))) {
-      for (j in seq_len(ncol(hap_stat))) {
-        if (j == 1) {
-          x_list[[length(x_list)+1]] <- min(range) +
-            col_rel_width[j] / 2 * inc
-        } else {
-          x_list[[length(x_list)+1]] <- min(range) +
-            sum(col_rel_width[1:j-1]) * inc +
-            col_rel_width[j] / 2 * inc
-        }
-        y_list[[length(y_list)+1]] <- -i
-        label_list[[length(label_list)+1]] <- hap_stat[[i, j]]
-      }
-    }
-
-    label_df <- data.frame(
-      X = unlist(x_list),
-      Y = unlist(y_list),
-      Label = unlist(label_list)
-    )
-
-    return(label_df)
-  }
-
-  hap_stat_to_header_df <- function(hap_stat, range) {
-    col_rel_width <- apply(hap_stat, 2, function(col) max(nchar(col)))
-    inc <- (max(range) - min(range)) / sum(col_rel_width)
-    label_list <- list()
-    x_list <- list()
-    y_list <- list()
-
-    for (j in seq_len(ncol(hap_stat))) {
-      if (j == 1) {
-        x_list[[length(x_list)+1]] <- min(range) +
-          col_rel_width[j] / 2 * inc
-      } else {
-        x_list[[length(x_list)+1]] <- min(range) +
-          sum(col_rel_width[1:j-1]) * inc +
-          col_rel_width[j] / 2 * inc
-      }
-      y_list[[length(y_list)+1]] <- 0
-      label <- sub("^(Pos.|Group.)", "", names(hap_stat)[j])
-      label_list[[length(label_list)+1]] <- label
-    }
-
-    header_df <- data.frame(
-      X = unlist(x_list),
-      Y = unlist(y_list),
-      Label = unlist(label_list)
-    )
-
-    return(header_df)
-  }
-
-  hap_stat_to_line_df <- function(hap_stat, range, y=3, yend=5) {
-    col_rel_width <- apply(hap_stat, 2, function(col) max(nchar(col)))
-    inc <- (max(range) - min(range)) / sum(col_rel_width)
-
-    x_list <- list()
-    y_list <- list()
-    xend_list <- list()
-    yend_list <- list()
-
-    for (j in seq_len(ncol(hap_stat))) {
-
-      name <- names(hap_stat)[j]
-
-      if (!startsWith(name, "Pos.")) {
-        next
-      }
-
-      if (j == 1) {
-        x_list[[length(x_list)+1]] <- min(range) +
-          col_rel_width[j] / 2 * inc
-      } else {
-        x_list[[length(x_list)+1]] <- min(range) +
-          sum(col_rel_width[1:j-1]) * inc +
-          col_rel_width[j] / 2 * inc
-      }
-
-      xend_list[[length(xend_list)+1]] <- sub("Pos.", "", name) |> as.integer()
-      y_list[[length(y_list)+1]] <- y
-      yend_list[[length(yend_list)+1]] <- yend
-    }
-
-    line_df <- data.frame(
-      X = unlist(x_list),
-      Y = unlist(y_list),
-      XEnd = unlist(xend_list),
-      YEnd = unlist(yend_list)
-    )
-
-    return(line_df)
-  }
-
-  hap_stat_to_grid_df <- function(hap_stat, range, top=3) {
-
-    col_rel_width <- apply(hap_stat, 2, function(col) max(nchar(col)))
-    inc <- (max(range) - min(range)) / sum(col_rel_width)
-
-    x_list <- list(min(range))
-    for (j in seq_along(col_rel_width)) {
-      x_list[[length(x_list)+1]] <- min(range) +
-        sum(col_rel_width[1:j]) * inc
-    }
-
-    vline_df <- data.frame(
-      X = unlist(x_list),
-      XEnd = unlist(x_list),
-      Y = top,
-      YEnd = - nrow(hap_stat) - 0.5
-    )
-
-    y_list <- c(top, - seq_len(nrow(hap_stat)) + 0.5, - nrow(hap_stat) - 0.5)
-
-    hline_df <- data.frame(
-      Y = unlist(y_list),
-      YEnd = unlist(y_list),
-      X = min(range),
-      XEnd = max(range)
-    )
-
-    return(rbind(vline_df, hline_df))
-  }
-
-  label_df <- hap_stat_to_label_df(hap_stat, range)
-  header_df <- hap_stat_to_header_df(hap_stat, range)
-  line_df <- hap_stat_to_line_df(hap_stat, range)
-  grid_df <- hap_stat_to_grid_df(hap_stat, range)
-
-  hap_table <- ggplot() +
-    geom_text(data=label_df, mapping=aes(x=X, y=Y, label=Label)) +
-    geom_text(data=header_df, mapping=aes(x=X, y=Y, label=Label), angle=90, hjust=0, vjust=0.5) +
-    geom_segment(data=line_df, mapping=aes(x=X, y=Y, xend=XEnd, yend=YEnd)) +
-    geom_segment(data=grid_df, mapping=aes(x=X, y=Y, xend=XEnd, yend=YEnd)) +
-    theme_void() +
-    scale_x_continuous(limits=range, expand=c(0, 0))
-
-  return(hap_table)
 }
