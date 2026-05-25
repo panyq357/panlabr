@@ -9,7 +9,7 @@ plot_scatter_pie_map(plot_data, sf_obj)
 \arguments{
 \item{plot_data}{a long data.frame, contains these columns: SampleID, HapGroup, lon, lat.}
 
-\item{sf_obj}{a sf object read from a shapefile by \code{\link[sf:st_read]{sf::read_sf()}}.}
+\item{sf_obj}{a sf object read from a shapefile by \code{\link[sf:read_sf]{sf::read_sf()}}.}
 }
 \value{
 a ggplot plot object.

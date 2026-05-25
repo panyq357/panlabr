@@ -49,7 +49,8 @@ setMethod("make_genbank_string",
     #    loop over transcripts to make cds string.
     splitted <- split(local_gtf, local_gtf$transcript_id)
     feature_string_list <- list()
-    for (gr in splitted) {
+    for (i in seq_along(splitted)) {
+      gr <- splitted[[i]]
       cds <- subset(gr, gr$type == "CDS")
       if (length(cds) > 0) {
         feature_string_list[[length(feature_string_list) + 1]] <- make_feature_string(
