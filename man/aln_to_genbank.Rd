@@ -12,6 +12,8 @@ aln_to_genbank(aln, target_genome, target_gtf)
 \item{target_genome}{target genome FASTA path.}
 
 \item{target_gtf}{target genome annotation GTF path.}
+
+\item{preset}{a string, which is the preset of minimap2.}
 }
 \description{
 Generate genbank string from target genome by alignment.

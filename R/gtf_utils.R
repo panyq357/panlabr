@@ -12,12 +12,12 @@ gff_to_gtf <- function(gff, gene_type="gene", transcript_type="mRNA") {
 
   gene <- gff[gff$type == gene_type, ]
   gene$gene_id <- as.character(gene$ID)
-  mcols(gene) <- mcols(gene)[c("source", "type", "score", "phase", "gene_id")]
+  GenomicRanges::mcols(gene) <- GenomicRanges::mcols(gene)[c("source", "type", "score", "phase", "gene_id")]
 
   transcript <- gff[gff$type == transcript_type, ]
   transcript$transcript_id <- as.character(transcript$ID)
   transcript$gene_id <- as.character(transcript$Parent)
-  mcols(transcript) <- mcols(transcript)[c("source", "type", "score", "phase", "transcript_id", "gene_id")]
+  GenomicRanges::mcols(transcript) <- GenomicRanges::mcols(transcript)[c("source", "type", "score", "phase", "transcript_id", "gene_id")]
 
   sub_tx_feature_names <- setdiff(levels(gff$type), c("gene", "mRNA"))
   sub_tx_feature_list <- sub_tx_feature_names |>
@@ -25,7 +25,7 @@ gff_to_gtf <- function(gff, gene_type="gene", transcript_type="mRNA") {
       feature <- gff[gff$type == feature_name, ]
       feature$transcript_id <- as.character(feature$Parent)
       feature$gene_id <- transcript$gene_id[match(feature$transcript_id, transcript$transcript_id)]
-      mcols(feature) <- mcols(feature)[c("source", "type", "score", "phase", "transcript_id", "gene_id")]
+      GenomicRanges::mcols(feature) <- GenomicRanges::mcols(feature)[c("source", "type", "score", "phase", "transcript_id", "gene_id")]
       return(feature)
     }) |>
     setNames(sub_tx_feature_names) |>

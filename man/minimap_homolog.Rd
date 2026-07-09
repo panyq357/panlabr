@@ -4,7 +4,7 @@
 \alias{minimap_homolog}
 \title{Use external minimap2 to find homolog in another genome.}
 \usage{
-minimap_homolog(target, query, chromosome, start, end)
+minimap_homolog(target, query, chromosome, start, end, preset = NULL)
 }
 \arguments{
 \item{target}{target genome FASTA file path.}
